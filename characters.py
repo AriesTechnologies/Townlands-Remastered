@@ -4,17 +4,26 @@
 
 # --- Imports --- #
 
-import pygame
-from sprites import IMAGE_PATH
+import pygame.transform as pg_transform
+from sprites import Sprite
 
 
 # --- Character Class --- #
 
-class Character(pygame.sprite.Sprite):
+class Character(Sprite):
 	def __init__(self):
 	
-		super().__init__()
+		super().__init__("Prince/Prince")
 		
-		self.image = pygame.image.load(f"{IMAGE_PATH}/Prince/Prince.png")
-		self.rect.topleft = 0,0
-	
+		self.rect.y =  300
+		self.facing = "R"
+		
+	def change_direction(self, direction):
+		
+		if direction != self.facing:
+			self.facing = direction
+			self.image = pg_transform.flip(self.image, True, False)
+			if self.facing == 'R':
+				self.rect.x += 50 #Temp
+			else:
+				self.rect.x -= 50 #Temp

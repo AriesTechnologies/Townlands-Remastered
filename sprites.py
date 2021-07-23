@@ -4,7 +4,7 @@
 
 # --- Imports --- #
 
-import pygame
+import os, pygame
 
 
 # --- Variables --- #
@@ -18,6 +18,9 @@ class Sprite(pygame.sprite.Sprite):
 	def __init__(self, path):
 		
 		super().__init__()
+		self.update(path)
+		
+	def update(self, path):
 		
 		self.image = pygame.image.load(f"{IMAGE_PATH}/{path}.png")
 		self.rect = self.image.get_rect()
@@ -35,16 +38,11 @@ class Background(Sprite):
 
 class Upgradeable(Sprite):
 	def __init__(self, name, level=1):
-
+		super().__init__(f"{name}/{level}")
+		
 		self.__name = name
 		self.__level = level
-
-		super().__init__(f"{self.__name.replace(' ', '')}/{self.__level}")
-		
-		# self.__name = name
-		# self.__level = level
-		# self.image = pygame.image.load(f"{IMAGE_PATH}/{self.__name.replace(' ', '')}/{self.__level}.png")
-		# self.rect = self.image.get_rect()
+		self.max_level = len(os.listdir(f"{IMAGE_PATH}/{self.__name}"))
 		
 	@property
 	def level(self):
@@ -54,8 +52,7 @@ class Upgradeable(Sprite):
 		
 		if self.__level < self.max_level:
 			self.__level += 1
-			super().__init__(f"{self.__name.replace(' ', '')}/{self.__level}")
-			# self.image = pygame.image.load(f"{IMAGE_PATH}/{self.__name.replace(' ', '')}/{self.__level}.png")
+			self.update(f"{self.__name}/{self.__level}")
 
 
 # --- Town Hall Class --- #
@@ -64,5 +61,4 @@ class TownHall(Upgradeable):
 	def __init__(self, level=1):
 		
 		super().__init__("TownHall", level)
-		self.max_level = 3
 		
