@@ -14,8 +14,6 @@ pygame.init()
 
 BLACK = (0,)*3
 RED = (200,0,0)
-LIGHTBROWN = (185,122,85)
-BROWN = (136,89,63)
 WHITE = (255,)*3
 
 
@@ -23,7 +21,9 @@ WHITE = (255,)*3
 
 class App(object):
 	
-	__version__ = "FU 0.2.0 Gamma: Added characters, sprites, and menus modules (Jul 23 2021, 11:50 CST)" #"FU 0.1.0 Gamma: Added window and basic internals (Jul 23 2021, 9:40 CST)"
+	__version__ = "IU 0.2.1 Gamma: Minor updates (Jul 23 2021, 16:05 CST)"
+	#"FU 0.2.0 Gamma: Added characters, sprites, and menus modules (Jul 23 2021, 11:50 CST)"
+	#"FU 0.1.0 Gamma: Added window and basic internals (Jul 23 2021, 9:40 CST)"
 	FPS = 60
 	
 	def __init__(self):
@@ -71,15 +71,21 @@ class App(object):
 		
 		self.player.add(characters.Character())
 		
+		# --- Load Save --- #
+		
+		self.load()
+		
 	def load(self):
-		pass
+		
+		self.__firstTime = False
 		# with open("./Saves/Save1.sgf", "rb") as file:
 			# file.read()
 			
 	def save(self):
 		pass
+		
 		# with open("./Saves/Save1.sgf", "wb") as file:
-			# file.write("\n".join())
+			# file.write("\n".join((self.__firstTime,)))
 			
 	def __font_render(self, string):
 		return self.__font.render(string, True, BLACK)

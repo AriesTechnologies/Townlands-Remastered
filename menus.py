@@ -7,8 +7,10 @@
 import pygame
 
 
-lightbrown = (185,122,85)
-brown = (136,89,63)
+# --- Definitions --- #
+
+LIGHTBROWN = (185,122,85)
+BROWN = (136,89,63)
 
 
 # --- Menu Class --- #
@@ -30,8 +32,8 @@ class Paused(Menu):
 		super().__init__(size)
 		
 		self.image.fill((0,)*4)
-		pygame.draw.rect(self.image, lightbrown, self.rect, border_top_right_radius=30, border_bottom_right_radius=30)
-		pygame.draw.rect(self.image, brown, self.rect, width=5, border_top_right_radius=30, border_bottom_right_radius=30)
+		pygame.draw.rect(self.image, LIGHTBROWN, self.rect, border_top_right_radius=30, border_bottom_right_radius=30)
+		pygame.draw.rect(self.image, BROWN, self.rect, width=5, border_top_right_radius=30, border_bottom_right_radius=30)
 		
 	def update(self):
 		pass
