@@ -21,7 +21,8 @@ WHITE = (255,)*3
 
 class App(object):
 	
-	__version__ = "IU 0.2.1 Gamma: Minor updates (Jul 23 2021, 16:05 CST)"
+	__version__ = "FU 0.3.0 Gamma: Added key repeating, started adding Pause Menu (Jul 26 2021, 10:50 CST)"
+	#"IU 0.2.1 Gamma: Minor updates (Jul 23 2021, 16:05 CST)"
 	#"FU 0.2.0 Gamma: Added characters, sprites, and menus modules (Jul 23 2021, 11:50 CST)"
 	#"FU 0.1.0 Gamma: Added window and basic internals (Jul 23 2021, 9:40 CST)"
 	FPS = 60
@@ -36,16 +37,16 @@ class App(object):
 		self.__font = pygame.font.SysFont("comicsansms", 20)
 		
 		self.__quit = False
-		self.__paused = False
+		self.__isPaused = False
 		self.__firstTime = True
 		self.__day = 1
 		self.__eventTime = 3
 		self.__coins = 10
-		self.__instructions_list = ["Click the Left/Right Arrow Keys to move", "Click the Down Arrow to upgrade buildings", "Click the F6 key to get extra help and to pause"]
+		self.__instructions_list = ["Click the Left/Right Arrow Keys to move", "Click the Down Arrow to upgrade buildings", "Click the Esc Key to get extra help and to pause"]
 		
 		self.bg = pygame.sprite.GroupSingle()
 		self.fg = pygame.sprite.Group()
-		self.paused = pygame.sprite.Group()
+		self.paused = menus.Menu((self.__display.get_width()//3, self.__display.get_height()))#pygame.sprite.Group()
 		self.__instructions = pygame.sprite.GroupSingle()
 		self.player = pygame.sprite.GroupSingle()
 		
@@ -60,6 +61,14 @@ class App(object):
 		# --- Paused Additions --- #
 		
 		self.paused.add(menus.Paused((self.__display.get_width()//3, self.__display.get_height())))
+		self.paused.add_button((0, 0, self.__display.get_width()//3, self.__display.get_height()//6), "Continue")
+		
+		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()//6*2), "Continue"))
+		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()), "New Game"))
+		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()//6*3), "Options"))
+		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()), "Credits"))
+		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()//6*4), "Save"))
+		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()//6*5), "Quit"))
 		
 		# --- Instructions Additions ---- #
 		
@@ -75,22 +84,22 @@ class App(object):
 		
 		self.load()
 		
-	def load(self):
+	def load(self) -> None:
 		
 		self.__firstTime = False
 		# with open("./Saves/Save1.sgf", "rb") as file:
 			# file.read()
 			
-	def save(self):
+	def save(self) -> None:
 		pass
 		
 		# with open("./Saves/Save1.sgf", "wb") as file:
 			# file.write("\n".join((self.__firstTime,)))
 			
-	def __font_render(self, string):
+	def __font_render(self, string : str) -> pygame.Surface:
 		return self.__font.render(string, True, BLACK)
 			
-	def instruct(self):
+	def instruct(self) -> None:
 		
 		instructions = self.__instructions_list.copy()
 		while len(instructions) > 0:
@@ -107,29 +116,37 @@ class App(object):
 					
 			self.draw()
 
-	def events(self):
+	def events(self) -> None:
 		
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				self.__quit = True
 			elif event.type == pygame.KEYDOWN:
 				if event.key == pygame.K_ESCAPE:
-					self.__paused = not self.__paused
-				elif event.key == pygame.K_LEFT:
-					self.player.sprite.change_direction('L')
-					if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
-						self.player.sprite.rect.x -= 10
-					self.player.sprite.rect.x -= 5
-				elif event.key == pygame.K_RIGHT:
-					self.player.sprite.change_direction('R')
-					if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
-						self.player.sprite.rect.x += 10
-					self.player.sprite.rect.x += 5
+					self.__isPaused = not self.__isPaused
 				elif event.key == pygame.K_DOWN:
 					if (collision := pygame.sprite.spritecollide(self.player.sprite, self.fg, False)) != []: #Create variable 'collision', if 'collision 'is not equal to an empty list
 						collision[-1].upgrade()
-	
-	def draw(self):
+						
+				while event.type == pygame.KEYDOWN:
+					if event.key == pygame.K_LEFT:
+						self.player.sprite.change_direction('L')
+						if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
+							self.player.sprite.rect.x -= 5
+						self.player.sprite.rect.x -= 3
+					elif event.key == pygame.K_RIGHT:
+						self.player.sprite.change_direction('R')
+						if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
+							self.player.sprite.rect.x += 5
+						self.player.sprite.rect.x += 3
+						
+					for event in pygame.event.get():
+						if event.type == pygame.KEYUP:
+							break
+							
+					self.draw()
+					
+	def draw(self) -> None:
 		
 		self.__display.fill(BLACK)
 		self.bg.draw(self.__display)
@@ -138,12 +155,12 @@ class App(object):
 		
 		if self.__firstTime:
 			self.__instructions.draw(self.__display)
-		elif self.__paused:
+		elif self.__isPaused:
 			self.paused.draw(self.__display)
 			
 		pygame.display.flip()
 			
-	def __main__(self):
+	def __main__(self) -> None:
 		
 		if self.__firstTime:
 			self.instruct()
@@ -151,6 +168,7 @@ class App(object):
 		while not self.__quit:
 			self.events()
 			self.draw()
+			# print(round(self.__clock.get_fps(), 0))
 			self.__clock.tick(self.FPS)
 			
 		pygame.quit()

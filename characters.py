@@ -13,12 +13,12 @@ from sprites import Sprite
 class Character(Sprite):
 	def __init__(self):
 	
-		super().__init__("Prince/Prince")
+		super().__init__("Prince")
 		
 		self.rect.y =  300
 		self.facing = "R"
 		
-	def change_direction(self, direction):
+	def change_direction(self, direction : chr) -> None:
 		
 		if direction != self.facing:
 			self.facing = direction
