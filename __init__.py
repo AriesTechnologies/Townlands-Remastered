@@ -21,7 +21,7 @@ WHITE = (255,)*3
 
 class App(object):
 	
-	__version__ = "IU 0.3.2 Gamma: Added key repeating, started adding Pause Menu, added top messages (Jul 27 2021, 11:37 CST)"
+	__version__ = "IU 0.3.2 Gamma: Started adding title menu (Jul 27 2021, 11:37 CST)"
 	#"IU 0.3.1 Gamma: Added key repeating, started adding Pause Menu, added top messages (Jul 26 2021, 11:08 CST)"
 	#"IU 0.2.1 Gamma: Minor updates (Jul 23 2021, 16:05 CST)"
 	#"FU 0.2.0 Gamma: Added characters, sprites, and menus modules (Jul 23 2021, 11:50 CST)"
