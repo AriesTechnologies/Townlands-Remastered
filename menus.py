@@ -16,6 +16,19 @@ BROWN = (136,89,63)
 FONT = pygame.font.SysFont("comicsansms", 20)
 
 
+# --- Menu Class --- #
+
+class Menu(pygame.sprite.Group):
+	def __init__(self, size : tuple):
+
+		super().__init__()
+		
+	def add_button(self,size : tuple, text : str) -> None:
+		
+		self.add(Button(size, text))
+		self.sprites()[-1].rect.y = self.sprites()[-1].rect.h*(len(self.sprites())-1)
+
+
 # --- Button Class --- #
 
 class Button(pygame.sprite.Sprite):
@@ -35,21 +48,9 @@ class Button(pygame.sprite.Sprite):
 		# pygame.draw.rect(self.image, BROWN, self.rect, width=5, border_top_right_radius=30, border_bottom_right_radius=30)
 		
 		self.image.fill((0,)*4)
+		pygame.draw.rect(self.image, BROWN, self.rect, width=5, border_radius=10)
 		font = FONT.render(self.text, True, BROWN)
 		self.image.blit(font, (self.rect.w//2-font.get_width()//2, self.rect.h//2-font.get_height()//2))
-
-
-# --- Menu Class --- #
-
-class Menu(pygame.sprite.Group):
-	def __init__(self, size : tuple):
-
-		super().__init__()
-		
-	def add_button(self,size : tuple, text : str) -> None:
-		
-		self.add(Button(size, text))
-		self.sprites()[-1].rect.y = self.sprites()[-1].rect.h*(len(self.sprites())-1)
 		
 
 # --- Paused Class --- #
