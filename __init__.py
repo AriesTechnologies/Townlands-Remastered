@@ -37,7 +37,7 @@ class App(object):
 		self.__font = pygame.font.SysFont("comicsansms", 20)
 		
 		self.__quit = False
-		# self.__isTitleMenu = True
+		self.__isTitleMenu = True
 		self.__isPaused = False
 		self.__firstTime = True
 		self.__day = 1
@@ -45,12 +45,20 @@ class App(object):
 		self.__coins = 10
 		self.__instructions_list = ["Click the Left/Right Arrow Keys to move", "Click the Down Arrow to upgrade buildings", "Click the Esc Key to get extra help and to pause"]
 		
+		self.titleMenu = menus.Menu((self.__display.get_width()//3, self.__display.get_height()))
 		self.bg = pygame.sprite.GroupSingle()
 		self.fg = pygame.sprite.Group()
 		self.paused = menus.Menu((self.__display.get_width()//3, self.__display.get_height()))
 		self.__instructions = pygame.sprite.GroupSingle()
 		
 		self.player = pygame.sprite.GroupSingle()
+		
+		# --- Title Menu Additions --- #
+		
+		# self.titleMenu.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Play")
+		# self.titleMenu.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "New Game")
+		# self.titleMenu.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Options")
+		# self.titleMenu.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Quit")
 		
 		# --- Background Additions --- #
 		
@@ -125,6 +133,8 @@ class App(object):
 				self.__isPaused = not self.__isPaused
 			# elif event.key == pygame.K_UP:
 				# self.player.sprite.rect.y -= 50
+			elif event.key == pygame.K_RETURN:
+				self.__isTitleMenu = False 
 			elif event.key == pygame.K_DOWN:
 				if not self.__isPaused:
 					if (collision := pygame.sprite.spritecollide(self.player.sprite, self.fg, False)) != []: #Create variable 'collision', if 'collision 'is not equal to an empty list
@@ -152,16 +162,21 @@ class App(object):
 		
 		self.__display.fill(BLACK)
 		self.bg.draw(self.__display)
-		self.fg.draw(self.__display)
-		self.player.draw(self.__display)
 		
-		if self.__firstTime:
-			self.__instructions.draw(self.__display)
+		if not self.__isTitleMenu:
+			self.bg.draw(self.__display)
+			self.fg.draw(self.__display)
+			self.player.draw(self.__display)
+			
+			if self.__firstTime:
+				self.__instructions.draw(self.__display)
+			else:
+				font = self.__font_render(f"Days: {self.__day}  Coins: {self.__coins}")
+				self.__display.blit(font, (self.__display.get_width()//2-font.get_width()//2, 0))
+			if self.__isPaused:
+				self.paused.draw(self.__display)
 		else:
-			font = self.__font_render(f"Days: {self.__day}  Coins: {self.__coins}")
-			self.__display.blit(font, (self.__display.get_width()//2-font.get_width()//2, 0))
-		if self.__isPaused:
-			self.paused.draw(self.__display)
+			self.titleMenu.draw(self.__display)
 			
 		pygame.display.flip()
 			
