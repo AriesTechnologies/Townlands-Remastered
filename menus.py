@@ -46,9 +46,9 @@ class Menu(pygame.sprite.Group):
 
 		super().__init__()
 		
-	def add_button(self, rect : pygame.Rect, text : str) -> None:
+	def add_button(self,size : tuple, text : str) -> None:
 		
-		self.add(Button(rect[2:], text))
+		self.add(Button(size, text))
 		self.sprites()[-1].rect.y = self.sprites()[-1].rect.h*(len(self.sprites())-1)
 		
 

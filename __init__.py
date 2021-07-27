@@ -21,7 +21,7 @@ WHITE = (255,)*3
 
 class App(object):
 	
-	__version__ = "FU 0.3.0 Gamma: Added key repeating, started adding Pause Menu (Jul 26 2021, 10:50 CST)"
+	__version__ = "IU 0.3.1 Gamma: Added key repeating, started adding Pause Menu, added top messages (Jul 26 2021, 11:08 CST)"
 	#"IU 0.2.1 Gamma: Minor updates (Jul 23 2021, 16:05 CST)"
 	#"FU 0.2.0 Gamma: Added characters, sprites, and menus modules (Jul 23 2021, 11:50 CST)"
 	#"FU 0.1.0 Gamma: Added window and basic internals (Jul 23 2021, 9:40 CST)"
@@ -37,17 +37,19 @@ class App(object):
 		self.__font = pygame.font.SysFont("comicsansms", 20)
 		
 		self.__quit = False
+		# self.__isTitleMenu = True
 		self.__isPaused = False
 		self.__firstTime = True
 		self.__day = 1
-		self.__eventTime = 3
+		self.__eventTime = 3 #Easy: 5, Medium: 3, Hard: 2, Master: 1, Hell: 0
 		self.__coins = 10
 		self.__instructions_list = ["Click the Left/Right Arrow Keys to move", "Click the Down Arrow to upgrade buildings", "Click the Esc Key to get extra help and to pause"]
 		
 		self.bg = pygame.sprite.GroupSingle()
 		self.fg = pygame.sprite.Group()
-		self.paused = menus.Menu((self.__display.get_width()//3, self.__display.get_height()))#pygame.sprite.Group()
+		self.paused = menus.Menu((self.__display.get_width()//3, self.__display.get_height()))
 		self.__instructions = pygame.sprite.GroupSingle()
+		
 		self.player = pygame.sprite.GroupSingle()
 		
 		# --- Background Additions --- #
@@ -61,14 +63,12 @@ class App(object):
 		# --- Paused Additions --- #
 		
 		self.paused.add(menus.Paused((self.__display.get_width()//3, self.__display.get_height())))
-		self.paused.add_button((0, 0, self.__display.get_width()//3, self.__display.get_height()//6), "Continue")
-		
-		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()//6*2), "Continue"))
+		self.paused.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Continue")
+		self.paused.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Options")
+		self.paused.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Save")
+		self.paused.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Quit")
 		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()), "New Game"))
-		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()//6*3), "Options"))
 		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()), "Credits"))
-		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()//6*4), "Save"))
-		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()//6*5), "Quit"))
 		
 		# --- Instructions Additions ---- #
 		
@@ -92,7 +92,6 @@ class App(object):
 			
 	def save(self) -> None:
 		pass
-		
 		# with open("./Saves/Save1.sgf", "wb") as file:
 			# file.write("\n".join((self.__firstTime,)))
 			
@@ -118,33 +117,36 @@ class App(object):
 
 	def events(self) -> None:
 		
-		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
-				self.__quit = True
-			elif event.type == pygame.KEYDOWN:
-				if event.key == pygame.K_ESCAPE:
-					self.__isPaused = not self.__isPaused
-				elif event.key == pygame.K_DOWN:
+		event = pygame.event.poll()
+		if event.type == pygame.QUIT:
+			self.__quit = True
+		elif event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_ESCAPE:
+				self.__isPaused = not self.__isPaused
+			# elif event.key == pygame.K_UP:
+				# self.player.sprite.rect.y -= 50
+			elif event.key == pygame.K_DOWN:
+				if not self.__isPaused:
 					if (collision := pygame.sprite.spritecollide(self.player.sprite, self.fg, False)) != []: #Create variable 'collision', if 'collision 'is not equal to an empty list
-						collision[-1].upgrade()
+						self.__coins = collision[-1].upgrade(self.__coins)
+					
+			while event.type == pygame.KEYDOWN and not self.__isPaused:
+				if event.key == pygame.K_LEFT:
+					self.player.sprite.change_direction('L')
+					if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
+						self.player.sprite.rect.x -= 5
+					self.player.sprite.rect.x -= 3
+				elif event.key == pygame.K_RIGHT:
+					self.player.sprite.change_direction('R')
+					if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
+						self.player.sprite.rect.x += 5
+					self.player.sprite.rect.x += 3
+					
+				for event in pygame.event.get():
+					if event.type == pygame.KEYUP:
+						break
 						
-				while event.type == pygame.KEYDOWN:
-					if event.key == pygame.K_LEFT:
-						self.player.sprite.change_direction('L')
-						if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
-							self.player.sprite.rect.x -= 5
-						self.player.sprite.rect.x -= 3
-					elif event.key == pygame.K_RIGHT:
-						self.player.sprite.change_direction('R')
-						if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
-							self.player.sprite.rect.x += 5
-						self.player.sprite.rect.x += 3
-						
-					for event in pygame.event.get():
-						if event.type == pygame.KEYUP:
-							break
-							
-					self.draw()
+				self.draw()
 					
 	def draw(self) -> None:
 		
@@ -155,7 +157,10 @@ class App(object):
 		
 		if self.__firstTime:
 			self.__instructions.draw(self.__display)
-		elif self.__isPaused:
+		else:
+			font = self.__font_render(f"Days: {self.__day}  Coins: {self.__coins}")
+			self.__display.blit(font, (self.__display.get_width()//2-font.get_width()//2, 0))
+		if self.__isPaused:
 			self.paused.draw(self.__display)
 			
 		pygame.display.flip()

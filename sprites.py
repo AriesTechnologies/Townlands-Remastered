@@ -52,11 +52,13 @@ class Upgradeable(Sprite):
 	def level(self) -> int:
 		return self.__level
 		
-	def upgrade(self) -> None:
+	def upgrade(self, coins : int) -> None:
 		
-		if self.__level < self.max_level:
+		if self.__level < self.max_level and coins >= self._cost:
 			self.__level += 1
 			self.update(f"{self.__name}/{self.__level}")
+			coins -= self._cost
+		return coins
 
 
 # --- Town Hall Class --- #
@@ -65,4 +67,6 @@ class TownHall(Upgradeable):
 	def __init__(self, level=1):
 		
 		super().__init__("TownHall", level)
+		
+		self._cost = 10
 		
