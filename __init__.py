@@ -21,7 +21,8 @@ WHITE = (255,)*3
 
 class App(object):
 	
-	__version__ = "IU 0.3.3 Gamma: Updates to buttons (Jul 27 2021, 13:43 CST)"
+	__version__ = "IU 0.3.4 Gamma: Added Pause Menu, Title Menu button functions (Aug 4 2021, 9:47 CST)"
+	#"IU 0.3.3 Gamma: Updates to buttons (Jul 27 2021, 13:43 CST)"
 	#"IU 0.3.2 Gamma: Started adding title menu (Jul 27 2021, 11:37 CST)"
 	#"IU 0.3.1 Gamma: Added key repeating, started adding Pause Menu, added top messages (Jul 26 2021, 11:08 CST)"
 	#"IU 0.2.1 Gamma: Minor updates (Jul 23 2021, 16:05 CST)"
@@ -35,12 +36,13 @@ class App(object):
 		self.__clock = pygame.time.Clock()
 		pygame.display.set_caption("Townlands: Remastered")
 		pygame.display.set_icon(pygame.image.load("./Images/Icon.png"))
-		self.__display = pygame.display.set_mode((1284,720), pygame.RESIZABLE)
+		self.__display = pygame.display.set_mode((1280,720), pygame.RESIZABLE | pygame.DOUBLEBUF)
 		self.__font = pygame.font.SysFont("comicsansms", 20)
 		
 		self.__quit = False
 		self.__isTitleMenu = True
 		self.__isPaused = False
+		self.__isOptionsMenu = False
 		self.__firstTime = True
 		self.__day = 1
 		self.__eventTime = 3 #Easy: 5, Medium: 3, Hard: 2, Master: 1, Hell: 0
@@ -51,16 +53,19 @@ class App(object):
 		self.bg = pygame.sprite.GroupSingle()
 		self.fg = pygame.sprite.Group()
 		self.paused = menus.Menu((self.__display.get_width()//3, self.__display.get_height()))
+		self.options = menus.Menu(self.__display.get_size())
 		self.__instructions = pygame.sprite.GroupSingle()
 		
 		self.player = pygame.sprite.GroupSingle()
 		
 		# --- Title Menu Additions --- #
 		
-		self.titleMenu.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Play")
-		self.titleMenu.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "New Game")
-		self.titleMenu.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Options")
-		self.titleMenu.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Quit")
+		self.titleMenu.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Play")
+		self.titleMenu.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "New Game")
+		self.titleMenu.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Options")
+		self.titleMenu.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Quit")
+		
+		self.titleMenu.center_buttons(self.__display.get_size(), 3)
 		
 		# --- Background Additions --- #
 		
@@ -72,13 +77,22 @@ class App(object):
 		
 		# --- Paused Additions --- #
 		
-		self.paused.add(menus.Paused((self.__display.get_width()//3, self.__display.get_height())))
-		self.paused.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Continue")
-		self.paused.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Options")
-		self.paused.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Save")
-		self.paused.add_button((self.__display.get_width()//3, self.__display.get_height()//6), "Quit")
-		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()), "New Game"))
-		# self.paused.add(menus.Button((self.__display.get_width()//3, self.__display.get_height()), "Credits"))
+		self.paused.add(menus.Paused((self.__display.get_width()//4, self.__display.get_height())))
+		self.paused.add_button((self.paused.sprites()[0].rect.w//1.25, self.__display.get_height()//6), "Continue")
+		self.paused.add_button((self.paused.sprites()[0].rect.w//1.25, self.__display.get_height()//6), "Options")
+		self.paused.add_button((self.paused.sprites()[0].rect.w//1.25, self.__display.get_height()//6), "Save")
+		self.paused.add_button((self.paused.sprites()[0].rect.w//1.25, self.__display.get_height()//6), "Quit")
+		
+		self.paused.center_buttons(self.paused.sprites()[0].rect.size)
+		
+		# --- Optiona Additions --- #
+		
+		self.options.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Controls")
+		self.options.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Brightness")
+		self.options.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Dyslexic")
+		self.options.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Credits")
+		
+		self.options.center_buttons(self.__display.get_size(), 2)
 		
 		# --- Instructions Additions ---- #
 		
@@ -130,6 +144,27 @@ class App(object):
 		event = pygame.event.poll()
 		if event.type == pygame.QUIT:
 			self.__quit = True
+		elif event.type == pygame.MOUSEBUTTONDOWN:
+			if self.__isTitleMenu:
+				if self.titleMenu.sprites()[0].rect.collidepoint(event.pos):
+					self.__isTitleMenu = False
+				elif self.titleMenu.sprites()[1].rect.collidepoint(event.pos):
+					pass
+				elif self.titleMenu.sprites()[2].rect.collidepoint(event.pos):
+					self.__isTitleMenu = False
+					self.__isOptionsMenu = True
+				elif self.titleMenu.sprites()[3].rect.collidepoint(event.pos):
+					self.__quit = True
+			elif self.__isPaused:
+				if self.paused.sprites()[1].rect.collidepoint(event.pos):
+					self.__isPaused = False
+				elif self.paused.sprites()[2].rect.collidepoint(event.pos):
+					self.__isOptionsMenu = True
+				elif self.paused.sprites()[3].rect.collidepoint(event.pos):
+					self.save()
+				elif self.paused.sprites()[4].rect.collidepoint(event.pos):
+					self.__quit = True
+				
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE:
 				self.__isPaused = not self.__isPaused
@@ -137,6 +172,11 @@ class App(object):
 				# self.player.sprite.rect.y -= 50
 			elif event.key == pygame.K_RETURN:
 				self.__isTitleMenu = False 
+			elif event.key == pygame.K_BACKSPACE or event.key == pygame.K_LEFT:
+				if self.__isOptionsMenu:
+					self.__isOptionsMenu = False
+					if not self.__isTitleMenu and not self.__isPaused:
+						self.__isTitleMenu = True
 			elif event.key == pygame.K_DOWN:
 				if not self.__isPaused:
 					if (collision := pygame.sprite.spritecollide(self.player.sprite, self.fg, False)) != []: #Create variable 'collision', if 'collision 'is not equal to an empty list
@@ -165,8 +205,11 @@ class App(object):
 		self.__display.fill(BLACK)
 		self.bg.draw(self.__display)
 		
-		if not self.__isTitleMenu:
-			self.bg.draw(self.__display)
+		if self.__isTitleMenu:
+			self.titleMenu.draw(self.__display)
+		elif self.__isOptionsMenu:
+			self.options.draw(self.__display)
+		else:
 			self.fg.draw(self.__display)
 			self.player.draw(self.__display)
 			
@@ -177,8 +220,6 @@ class App(object):
 				self.__display.blit(font, (self.__display.get_width()//2-font.get_width()//2, 0))
 			if self.__isPaused:
 				self.paused.draw(self.__display)
-		else:
-			self.titleMenu.draw(self.__display)
 			
 		pygame.display.flip()
 			
@@ -190,7 +231,7 @@ class App(object):
 		while not self.__quit:
 			self.events()
 			self.draw()
-			# print(round(self.__clock.get_fps(), 0))
+			print(round(self.__clock.get_fps(), 0))
 			self.__clock.tick(self.FPS)
 			
 		pygame.quit()
@@ -199,4 +240,4 @@ class App(object):
 if __name__ == "__main__":
 	App().__main__()
 else:
-	raise ImportError
+	raise ImportError()
