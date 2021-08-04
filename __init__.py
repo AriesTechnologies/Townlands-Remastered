@@ -43,6 +43,7 @@ class App(object):
 		self.__isTitleMenu = True
 		self.__isPaused = False
 		self.__isOptionsMenu = False
+		self.__isControlsMenu = False
 		self.__firstTime = True
 		self.__day = 1
 		self.__eventTime = 3 #Easy: 5, Medium: 3, Hard: 2, Master: 1, Hell: 0
@@ -54,6 +55,7 @@ class App(object):
 		self.fg = pygame.sprite.Group()
 		self.paused = menus.Menu((self.__display.get_width()//3, self.__display.get_height()))
 		self.options = menus.Menu(self.__display.get_size())
+		self.controls = menus.Menu(self.__display.get_size())
 		self.__instructions = pygame.sprite.GroupSingle()
 		
 		self.player = pygame.sprite.GroupSingle()
@@ -85,7 +87,7 @@ class App(object):
 		
 		self.paused.center_buttons(self.paused.sprites()[0].rect.size)
 		
-		# --- Optiona Additions --- #
+		# --- Options Additions --- #
 		
 		self.options.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Controls")
 		self.options.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Brightness")
@@ -93,6 +95,17 @@ class App(object):
 		self.options.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Credits")
 		
 		self.options.center_buttons(self.__display.get_size(), 2)
+		
+		# --- Controls Additions --- #
+		
+		self.controls.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Left: Left Arrow")
+		self.controls.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Right : Right Arrow")
+		self.controls.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Run: Shift+Arrow Key")
+		self.controls.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Upgrade: Down Arrow")
+		self.controls.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Pause: Escape")
+		self.controls.add_button((self.__display.get_width()//4, self.__display.get_height()//8), "Back: Backspace or Left Arrow")
+		
+		self.controls.center_buttons(self.__display.get_size(), 1)
 		
 		# --- Instructions Additions ---- #
 		
@@ -164,6 +177,11 @@ class App(object):
 					self.save()
 				elif self.paused.sprites()[4].rect.collidepoint(event.pos):
 					self.__quit = True
+			elif self.__isOptionsMenu:
+				if self.options._buttons[0].rect.collidepoint(event.pos):
+					self.__isOptionsMenu = False
+					self.__isControlsMenu = True
+				
 				
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE:
@@ -177,6 +195,9 @@ class App(object):
 					self.__isOptionsMenu = False
 					if not self.__isTitleMenu and not self.__isPaused:
 						self.__isTitleMenu = True
+				elif self.__isControlsMenu:
+					self.__isOptionsMenu = True
+					self.__isControlsMenu = False
 			elif event.key == pygame.K_DOWN:
 				if not self.__isPaused:
 					if (collision := pygame.sprite.spritecollide(self.player.sprite, self.fg, False)) != []: #Create variable 'collision', if 'collision 'is not equal to an empty list
@@ -209,6 +230,8 @@ class App(object):
 			self.titleMenu.draw(self.__display)
 		elif self.__isOptionsMenu:
 			self.options.draw(self.__display)
+		elif self.__isControlsMenu:
+			self.controls.draw(self.__display)
 		else:
 			self.fg.draw(self.__display)
 			self.player.draw(self.__display)
