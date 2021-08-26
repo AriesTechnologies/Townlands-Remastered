@@ -16,12 +16,16 @@ BLACK = (0,)*3
 RED = (200,0,0)
 WHITE = (255,)*3
 
+SHIFTS = (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT)
+KEY_DICT = {pygame.K_LEFT : ('L', -3, -5), pygame.K_RIGHT : ('R', 3, 5)}
+
 
 # --- App Class --- #
 
 class App(object):
 	
-	__version__ = "IU 0.3.4 Gamma: Added Pause Menu, Title Menu button functions (Aug 4 2021, 9:47 CST)"
+	__version__ = "IU 0.3.5 Gamma: Cleaned up, improved lag in game (Aug 25 2021, 22:00 CST)"
+	#"IU 0.3.4 Gamma: Added Pause Menu, Title Menu button functions (Aug 4 2021, 9:47 CST)"
 	#"IU 0.3.3 Gamma: Updates to buttons (Jul 27 2021, 13:43 CST)"
 	#"IU 0.3.2 Gamma: Started adding title menu (Jul 27 2021, 11:37 CST)"
 	#"IU 0.3.1 Gamma: Added key repeating, started adding Pause Menu, added top messages (Jul 26 2021, 11:08 CST)"
@@ -202,24 +206,19 @@ class App(object):
 				if not self.__isPaused:
 					if (collision := pygame.sprite.spritecollide(self.player.sprite, self.fg, False)) != []: #Create variable 'collision', if 'collision 'is not equal to an empty list
 						self.__coins = collision[-1].upgrade(self.__coins)
+			
+			if event.key in KEY_DICT and not self.__isPaused:
+				while event.type == pygame.KEYDOWN:
+					key = KEY_DICT[event.key]
+					self.player.sprite.change_direction(key[0])
+					if event.mod in SHIFTS:
+						self.player.sprite.rect.x += key[-1]
+					self.player.sprite.rect.x += key[1]
 					
-			while event.type == pygame.KEYDOWN and not self.__isPaused:
-				if event.key == pygame.K_LEFT:
-					self.player.sprite.change_direction('L')
-					if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
-						self.player.sprite.rect.x -= 5
-					self.player.sprite.rect.x -= 3
-				elif event.key == pygame.K_RIGHT:
-					self.player.sprite.change_direction('R')
-					if event.mod in (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT, pygame.KMOD_SHIFT):
-						self.player.sprite.rect.x += 5
-					self.player.sprite.rect.x += 3
-					
-				for event in pygame.event.get():
-					if event.type == pygame.KEYUP:
-						break
-						
-				self.draw()
+					if pygame.event.peek(pygame.KEYUP):
+						event = pygame.event.poll()
+					pygame.event.clear()		
+					self.draw()
 					
 	def draw(self) -> None:
 		
@@ -254,7 +253,7 @@ class App(object):
 		while not self.__quit:
 			self.events()
 			self.draw()
-			print(round(self.__clock.get_fps(), 0))
+			print(round(self.__clock.get_fps()))
 			self.__clock.tick(self.FPS)
 			
 		pygame.quit()
