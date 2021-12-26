@@ -12,18 +12,20 @@ from sprites import Sprite
 
 class Character(Sprite):
 	def __init__(self):
-	
+
 		super().__init__("Prince")
-		
+
 		self.rect.y =  300
-		self.facing = "R"
-		
-	def change_direction(self, direction : chr) -> None:
-		
-		if direction != self.facing:
-			self.facing = direction
+		self.__direction = 1
+
+	@property
+	def direction(self) -> str:
+		return self.__direction
+
+	@direction.setter
+	def direction(self, direction : int) -> None:
+
+		if direction != self.__direction:
+			self.__direction = direction
 			self.image = pg_transform.flip(self.image, True, False)
-			if self.facing == 'R':
-				self.rect.x += 50 #Temp
-			else:
-				self.rect.x -= 50 #Temp
+			self.rect.x += 50*self.__direction #Temp
