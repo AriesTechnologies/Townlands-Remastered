@@ -9,11 +9,6 @@ import sprites
 import local
 
 
-# --- Definitions --- #
-
-FONT = pygame.font.SysFont("comicsansms", 20)
-
-
 # --- Menu Class --- #
 
 class Menu(pygame.sprite.Group):
@@ -54,7 +49,7 @@ class Button(pygame.sprite.Sprite):
 		self.image.fill((0,)*4)
 		pygame.draw.rect(self.image, local.LIGHTBROWN, self.rect,  border_radius=10)
 		pygame.draw.rect(self.image, local.BROWN, self.rect, width=5, border_radius=10)
-		font = FONT.render(self.text, True, local.BROWN)
+		font = local.FONT.render(self.text, True, local.BROWN)
 		self.image.blit(font, (self.rect.w//2-font.get_width()//2, self.rect.h//2-font.get_height()//2))
 
 	def center(self, displaySize : tuple[int]) -> None:
