@@ -5,14 +5,33 @@
 # --- Imports --- #
 
 import pygame
-import characters, menus, sprites, local, upgradeable
+import enemies, characters, maps, menus, sprites, local, upgradeable
 from pygame.locals import *
 
 
-# --- Variables --- #
+# --- Definitions --- #
 
-SHIFTS = (pygame.KMOD_LSHIFT, pygame.KMOD_RSHIFT)
-DAYNIGHTEVENT = pygame.event.Event(local.DAYNIGHT)
+def collide_with_bounds(sprite, group):
+
+	hits = pygame.sprite.spritecollide(sprite, group, False)
+	if hits: #If non-empty list
+		group = hits[0]
+		if group.rect.centerx > sprite.rect.centerx:
+			sprite.rect.x = group.rect.left-sprite.rect.w
+		if group.rect.centerx < sprite.rect.centerx:
+			sprite.rect.x = group.rect.right
+
+def collide_with_building(sprite, group):
+	"""If touching building with more than 0 health"""
+
+	hits = tuple((i for i in pygame.sprite.spritecollide(sprite, group, False)
+							if isinstance(i, upgradeable.Upgradeable) and i._health > 0 and i.level > 1))
+	if hits:
+		if len(hits) > 1:
+			hits = tuple((i for i in hits if isinstance(i, upgradeable.Wall)))
+		hits = hits[-1]
+		return hits
+	return False
 
 
 # --- App Class --- #
@@ -20,9 +39,14 @@ DAYNIGHTEVENT = pygame.event.Event(local.DAYNIGHT)
 class App(object):
 
 	__app__ = "Townlands: Remastered"
-	__version__ = """IU 0.5.1 Gamma: Added day/night cycle,
-									added gaining coins after every night,
-									added all updated graphics (Dec 29 2021, 16:38)"""
+	__version__ = """FU 1.0.0 Alpha: Added all buildings,
+									added "camera",
+									added enemies,
+									released
+									(Dec 31 2021, 16:32 CST)"""
+	# """IU 0.5.1 Gamma: Added day/night cycle,
+	# 								added gaining coins after every night,
+	# 								added all updated graphics (Dec 29 2021, 16:38)"""
 	# """FU 0.5.0 Gamma: Added banner to Pause Menu,
 	# 							added all menus (so far),
 	# 							added audio menu (replaced brightness), added flag,
@@ -58,38 +82,66 @@ class App(object):
 		self.__isPaused = False
 		self.__settings = [True, True, False, True]
 		self.__day = 1
-		self.__difficulty = 3 #Beginner: 5, Easy: 4, Medium: 3, Hard: 2, Master: 1, Hell: 0
+		self.__difficulty = 2 #Beginner: 0, Easy: 1, Medium: 2, Hard: 3, Master: 4, Hell: 5 (not added fully)
 		self.__coins = 10
 
 		self.load()
 
 		# --- Background/Foreground --- #
 
-		if self.__temp[0] == 0:
-			self.bg = pygame.sprite.Group(sprites.Background(0))
-		else:
-			self.bg = pygame.sprite.Group(sprites.Background(1))
-
-		self.fg = pygame.sprite.Group()
+		self.bg = pygame.sprite.Group(maps.TiledMap(self.__day))
+		self.fg, self.fg2 = pygame.sprite.Group(), pygame.sprite.Group() #Create fg groups
 		self.player =  pygame.sprite.GroupSingle(characters.Character())
-		self.fg2 = pygame.sprite.Group()
+		self.__monsters = pygame.sprite.Group()
+		self.camera = maps.Camera(self.bg.sprites()[0].rect.size)
+
+		self.boundaries = pygame.sprite.Group()
+		self.boundaries.add(sprites.Bound(0))
+		self.boundaries.add(sprites.Bound(self.bg.sprites()[0].rect.w-3))
 
 		# --- Background Additions --- #
 
-		self.bg.add(sprites.Planet(self.__temp.pop(0)))
+		self.bg.add(sprites.Planet(self.bg.sprites()[0].type))
 
 		# --- Foreground Additions --- #
 
-		self.__clanBanner = sprites.Sprite("Banners/BlueStar")
-		self.fg.add(sprites.Flag(self.__clanBanner))
-
+		#TownHall
 		self.fg.add(upgradeable.TownHall(self.__temp.pop(0)))
-		self.fg.add(sprites.Shop())
-		self.fg.add(upgradeable.Statue(self.__temp.pop(0)))
 
-		# --- Foreground 2 Additions --- #
+		#Flag, Shop, Statue
+		self.__clanBanner = sprites.Sprite("Banners/BlueStar")
+		self.fg.add(sprites.Flag(self.__clanBanner, self.fg.sprites()[-1].OFFSETX+self.fg.sprites()[-1].rect.w//20))
+		self.fg.add(sprites.Shop(self.fg.sprites()[0].OFFSETX))
+		self.fg.add(upgradeable.Statue(self.__temp.pop(0), self.bg.sprites()[0].rect.w))
 
-		self.fg2.add(upgradeable.Wall(self.__temp.pop(0)))
+		#ArcherTowers
+		self.fg.add(upgradeable.ArcherTower(self.__temp.pop(0), self.fg.sprites()[0].OFFSETX-self.fg.sprites()[0].rect.w))
+		self.fg.add(upgradeable.ArcherTower(self.__temp.pop(0), self.fg.sprites()[0].OFFSETX+self.fg.sprites()[0].rect.w*2))
+
+		#Farm
+		self.fg.add(upgradeable.Farm(self.__temp.pop(0), 2300))
+		self.fg.add(upgradeable.Farm(self.__temp.pop(0), 4700))
+
+		#Cannons
+		self.fg.add(upgradeable.Cannon(self.__temp.pop(0), 1000))
+		self.fg.add(upgradeable.Cannon(self.__temp.pop(0), 6600))
+		self.fg.sprites()[-1].flip()
+
+		#Portal
+		if self.__temp[0] == 1:
+			self.fg.add(upgradeable.Portal(self.__temp.pop(0), 0))
+
+		#Walls
+		archerw = self.fg.sprites()[4].rect.w
+		cannonw = self.fg.sprites()[-3].rect.w
+
+		self.fg2.add(upgradeable.Wall(self.__temp.pop(0), self.fg.sprites()[-3].OFFSETX-cannonw//8)) #Left Cannon
+		self.fg2.add(upgradeable.Wall(self.__temp.pop(0), self.fg.sprites()[4].OFFSETX-archerw//8)) #Left ArcherTower
+		self.fg2.add(upgradeable.Wall(self.__temp.pop(0), self.fg.sprites()[0].OFFSETX-self.fg.sprites()[0].rect.w//32)) #Left TownHall
+		self.fg2.add(upgradeable.Wall(self.__temp.pop(0), self.fg.sprites()[0].OFFSETX+self.fg.sprites()[0].rect.w)) #Right TownHall
+		self.fg2.add(upgradeable.Wall(self.__temp.pop(0), self.fg.sprites()[5].OFFSETX+archerw+archerw//8)) #Right ArcherTower
+		self.fg2.add(upgradeable.Wall(self.__temp.pop(0), self.fg.sprites()[-2].OFFSETX+cannonw+cannonw//8)) #Right Cannon
+
 
 		# --- Menu Buttons --- #
 
@@ -106,6 +158,7 @@ class App(object):
 
 		self.createMenus()
 		self.__path = [self.titleMenu]
+		self.__all_sprites = self.fg.sprites()+self.fg2.sprites()
 
 	@property
 	def audio(self):
@@ -138,10 +191,12 @@ class App(object):
 
 	@property
 	def isDay(self):
-		return self.bg.sprites()[-1].type == 0
+		return self.bg.sprites()[0].type == 0
 
 	def load(self) -> None:
 		"""Load in a previous save game file"""
+
+		temp = []
 
 		try:
 			with open(local.SAVE_PATH, "r") as file:
@@ -154,16 +209,15 @@ class App(object):
 			self.__day = temp.pop(0)
 			self.__difficulty = temp.pop(0)
 			self.__coins = temp.pop(0)
-
-			self.__temp = temp
-
 		except Exception as e:
 			if isinstance(e, FileNotFoundError):
-				self.__temp = [1,]*2
+				temp = [1,]*25 #Should be plenty of 1's for the save
 			else:
 				with open(local.ERROR_PATH, "w") as file:
 					file.write(str(e))
-				print(f"Error: {e}")
+				# print(f"Error: {e}")
+		finally:
+			self.__temp = temp
 
 	def save(self) -> None:
 		"""Save the game to file"""
@@ -173,8 +227,7 @@ class App(object):
 		with open(local.SAVE_PATH, "w") as file:
 			file.write("\n".join((str(i) for i in self.__settings)))
 			file.write("\n")
-			file.write("\n".join((str(self.__day), str(self.__difficulty), str(self.__coins),
-													str(self.bg.sprites()[-1].type))))
+			file.write("\n".join((str(self.__day), str(self.__difficulty), str(self.__coins))))
 			file.write("\n")
 			file.write("\n".join(tuple((str(i.level) for i in fg))))
 			file.write("\n")
@@ -189,7 +242,10 @@ class App(object):
 
 	def __font_render(self, string : str) -> pygame.Surface:
 		"""Font render"""
-		return self.__font.render(string, True, local.BLACK)
+		if self.bg.sprites()[0].type == 0:
+			return self.__font.render(string, True, local.BLACK)
+		else:
+			return self.__font.render(string, True, local.WHITE)
 
 	def createMenus(self):
 		"""Create the menus"""
@@ -253,7 +309,7 @@ class App(object):
 		else:
 			self.__path = [self.titleMenu, self.options]
 
-	def instruct(self, event : pygame.event.Event) -> None:
+	def __instruct(self, event : pygame.event.Event) -> None:
 		"""Display instructions loop"""
 
 		if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
@@ -264,7 +320,20 @@ class App(object):
 				self.__settings[0] = False
 				pygame.key.set_repeat(App.FPS*2, App.FPS//2)
 
-	def clickEvents(self, event : pygame.event.Event) -> None:
+	def spawnMonsters(self, amount=1, remove=False):
+		"""Spawn monsters or remove monsters"""
+
+		if remove:
+			self.fg.remove(self.__monsters)
+			if len(self.__monsters.sprites()) == 0:
+				self.__coins += 10
+			self.__monsters.empty()
+		else:
+			for i in range(amount):
+				self.__monsters.add(enemies.Monster(self.__day))
+			self.fg.add(self.__monsters)
+
+	def __clickEvents(self, event : pygame.event.Event) -> None:
 		"""Mousebuttondown Events"""
 
 		if len(self.__path) > 0: #Both
@@ -291,7 +360,8 @@ class App(object):
 			elif not self.__inGame and self.__path[-1] == self.titleMenu: #Title Menu
 				if index == 0: #Play
 					self.__settings[0] = False
-					pygame.time.set_timer(DAYNIGHTEVENT, local.DAYCYCLETIME, 0)
+					pygame.time.set_timer(local.DAYNIGHTEVENT, local.DAYCYCLETIME, 0)
+					pygame.time.set_timer(local.ATTACKEVENT, local.ATTACKTIME, 0)
 					pygame.key.set_repeat(App.FPS*2, App.FPS//2)
 				elif index == 2: #Options
 					self.__path.append(self.options)
@@ -300,6 +370,8 @@ class App(object):
 
 				if index == 0 or index == 1:
 					self.__inGame = True
+					# pygame.time.set_timer(local.DAYNIGHTEVENT, local.DAYCYCLETIME, 0)
+					# pygame.key.set_repeat(App.FPS*2, App.FPS//2)
 					self.__path.clear()
 
 			elif self.__isPaused and self.__path[-1] == self.paused: #Pause Menu
@@ -308,18 +380,21 @@ class App(object):
 				elif index == 1: #Options
 					self.__path.append(self.options)
 				elif index == 2: #Return to Menu
+					self.bg.sprites()[-1].rect.x = 0
 					self.__inGame = False
 					self.__path = [self.titleMenu]
 
-	def keyEvents(self, event : pygame.event.Event) -> None:
+	def __keyEvents(self, event : pygame.event.Event) -> None:
 		"""Key Events"""
 
 		if event.mod == pygame.KMOD_LCTRL:
 			if event.key == pygame.K_q:
 				self.__quit = True
 				self.__path.clear()
-			# elif event.key == pygame.K_d:
-			# 	pygame.event.post(DAYNIGHTEVENT)
+			elif event.key == pygame.K_d:
+				self.debug = not self.debug
+			# elif event.key == pygame.K_n:
+			# 	pygame.event.post(local.DAYNIGHTEVENT)
 		elif event.key == pygame.K_LEFT:
 			if len(self.__path) > 1:
 				del self.__path[-1]
@@ -338,13 +413,12 @@ class App(object):
 				elif event.key == pygame.K_RIGHT:
 					self.player.sprite.direction = 1
 
-				if event.mod in SHIFTS:
-					x = local.RUN_MOVEMENT*self.player.sprite.direction
+				if event.mod in local.SHIFTS:
+					x = local.RUN_MOVEMENT
 				else:
-					x = local.MOVEMENT*self.player.sprite.direction
-				self.player.sprite.rect.x += x
-			# elif event.key == pygame.K_UP:
-				# self.player.sprite.rect.y -= 50
+					x = local.MOVEMENT
+				self.player.sprite.rect.x += x*self.player.sprite.direction
+				collide_with_bounds(self.player.sprite, self.boundaries)
 			elif event.key == pygame.K_ESCAPE:
 				self.__path.append(self.paused)
 				self.__isPaused = True
@@ -354,46 +428,83 @@ class App(object):
 				fg = (i for i in fg if isinstance(i, upgradeable.Upgradeable)) #Valid fg objects
 				if (collision := pygame.sprite.spritecollide(self.player.sprite, fg, False)) != []:
 					self.__coins = collision[-1].upgrade(self.__coins)
-			elif event.key == pygame.K_c:
-				self.__coins += 1
+			# elif event.key == pygame.K_c:
+			# 	self.__coins += 1
 
 	def events(self) -> None:
 		"""Main Event Function"""
 
 		event = pygame.event.poll()
 		if self.__settings[0] and self.__inGame:
-			self.instruct(event)
+			self.__instruct(event)
 		elif event.type == pygame.QUIT:
 			self.quit()
 		elif event.type == pygame.MOUSEBUTTONDOWN:
-			self.clickEvents(event)
+			self.__clickEvents(event)
 		elif event.type == pygame.KEYDOWN:
-			self.keyEvents(event)
+			self.__keyEvents(event)
 		elif event.type == local.DAYNIGHT:
 			if not self.__isPaused and self.__inGame:
 				self.__day += 0.5
 				if self.__day % 1 == 0:
-					self.bg.sprites()[0].type = self.bg.sprites()[-1].type = 0
+					pygame.time.set_timer(local.ATTACKEVENT, 0, 0)
+					self.spawnMonsters(1, True)
+					self.bg.sprites()[0].type = 0
 					self.__coins += 10
 				else:
-					self.bg.sprites()[0].type = 1
+					pygame.time.set_timer(local.ATTACKEVENT, local.ATTACKTIME, 0)
+					self.spawnMonsters(1)
 					if int(self.__day) % 5 == 0:
-						self.bg.sprites()[-1].type = 2
+						self.bg.sprites()[0].type = 2
 					else:
-						self.bg.sprites()[-1].type = 1
+						self.bg.sprites()[0].type = 1
 
+				self.bg.remove(self.bg.sprites()[-1])
+				self.bg.add(sprites.Planet(self.bg.sprites()[0].type))
+
+		elif event.type == local.ATTACK:
+			for i in self.__monsters.sprites():
+				if (build := collide_with_building(i, self.__all_sprites)):
+					i.attack(build)
+
+	def update(self) -> None:
+		"""Updates positions"""
+
+		#Move monsters if not colliding_with_building and building health > 0 and build level > 1
+		for i in self.__monsters.sprites():
+			if not (build := collide_with_building(i, self.__all_sprites)):
+				i.move()
+
+		#Move objects
+		for i in self.fg.sprites()+self.fg2.sprites():
+			i.rect.x = self.bg.sprites()[0].rect.x+i.OFFSETX
+
+		#Apply the camera
+		sprites =  [self.bg.sprites()[0]]+self.boundaries.sprites()
+		for i in sprites:
+			i.rect = self.camera.apply(i)
+
+		self.camera.update(self.player.sprite)
+		self.player.sprite.rect = self.camera.apply(self.player.sprite)
 
 	def draw(self) -> None:
 		"""Draw menus or game"""
 
+		#Cover up issue with camera
 		if self.isDay:
-			self.__display.fill(local.LIGHTBLUE)
+			colors = iter((local.LIGHTBLUE, local.BLUE, local.LIGHTBROWN, local.GREEN))
 		else:
-			if self.bg.sprites()[-1].type == 1:
-				self.__display.fill(local.DARK)
+			if self.bg.sprites()[0].type == 1:
+				colors = iter((local.DARK, local.DARKBLUE, local.DARKBROWN, local.DARKGREEN))
 			else:
-				self.__display.fill(local.DARKRED)
+				colors = iter((local.DARKRED, local.DARKBLUE, local.DARKBROWN, local.DARKGREEN))
 
+		self.__display.fill(next(colors))
+		pygame.draw.rect(self.__display, next(colors), (0,local.LANDHEIGHT,local.DISPLAYW,local.LANDHEIGHT))
+		pygame.draw.rect(self.__display, next(colors), (0,local.LANDHEIGHT,local.DISPLAYW,60))
+		pygame.draw.rect(self.__display, next(colors), (0,local.LANDHEIGHT,local.DISPLAYW,30))
+
+		#Draw game
 		self.bg.draw(self.__display)
 		if self.__inGame:
 			self.fg.draw(self.__display)
@@ -425,12 +536,17 @@ class App(object):
 			font = self.__font_render(App.__app__)
 			self.__display.blit(font, (self.__display.get_width()//2-font.get_width()//2, 0))
 
+		#Draw menu
 		if len(self.__path) > 0:
 			self.__path[-1].draw(self.__display)
 
+		#Write debug stuff
 		if self.debug:
-			font = self.__font_render("FPS: {}".format(round(self.__clock.get_fps())))
-			self.__display.blit(font, (self.__display.get_width()-font.get_width()-5, 0))
+			for i,x in enumerate(("FPS: {}".format(round(self.__clock.get_fps())), f"Exact Day: {self.__day}", f"Bg Rect: {self.bg.sprites()[0].rect.topleft}")):
+				font = self.__font_render(x)
+				self.__display.blit(font, (self.__display.get_width()-font.get_width()-5, 20*i))
+			if self.__inGame and not self.__isPaused:
+				self.boundaries.draw(self.__display)
 
 		pygame.display.flip()
 
@@ -439,6 +555,7 @@ class App(object):
 
 		while not self.__quit:
 			self.events()
+			self.update()
 			self.draw()
 			# print(round(self.__clock.get_fps()))
 			self.__clock.tick(self.FPS)

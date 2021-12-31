@@ -5,7 +5,7 @@
 # --- Imports --- #
 
 import pygame.transform as pg_transform
-from local import LANDHEIGHT
+import local
 from sprites import Sprite
 
 
@@ -16,7 +16,8 @@ class Character(Sprite):
 
 		super().__init__("Explorer")
 
-		self.rect.y =  LANDHEIGHT-self.rect.h
+		self.rect.x = local.DISPLAYW//2
+		self.rect.y =  local.LANDHEIGHT-self.rect.h
 		self.__direction = 1
 
 	@property
