@@ -1,5 +1,5 @@
 # Townlands-Remastered
-Townlands: Remastered (Coming Soon, 2022)
+Townlands: Remastered (2022)
 
 Rereleased: Released for different hardware/OS\
 Remastered: Updated graphics, bug fixes\
