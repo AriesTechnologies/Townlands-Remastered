@@ -19,6 +19,7 @@ class Character(Sprite):
 		self.rect.x = local.DISPLAYW//2
 		self.rect.y =  local.LANDHEIGHT-self.rect.h
 		self.__direction = 1
+		self._health = 1
 
 	@property
 	def direction(self) -> str:

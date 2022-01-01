@@ -33,17 +33,24 @@ def collide_with_building(sprite, group):
 		return hits
 	return False
 
+def collide_with_player(sprite, group):
+	return pygame.sprite.spritecollide(sprite, group, False)
+	# if hits:
+	# 	return True
+	# return False
+
 
 # --- App Class --- #
 
 class App(object):
 
 	__app__ = "Townlands: Remastered"
-	__version__ = """FU 1.0.0 Alpha: Added all buildings,
-									added "camera",
-									added enemies,
-									released
-									(Dec 31 2021, 16:32 CST)"""
+	__version__ = """IU 1.1.0 Alpha: Added game over (Dec 31 2021, 23:12 CST)"""
+	# """FU 1.0.0 Alpha: Added all buildings,
+	# 								added "camera",
+	# 								added enemies,
+	# 								released
+	# 								(Dec 31 2021, 16:32 CST)"""
 	# """IU 0.5.1 Gamma: Added day/night cycle,
 	# 								added gaining coins after every night,
 	# 								added all updated graphics (Dec 29 2021, 16:38)"""
@@ -193,6 +200,11 @@ class App(object):
 	def isDay(self):
 		return self.bg.sprites()[0].type == 0
 
+	@property
+	def isGameOver(self):
+		return self.player.sprite._health == 0
+		#all((i._health <= 0 and i.level == 0 for i in self.fg.sprites()+self.fg2.sprites()))
+
 	def load(self) -> None:
 		"""Load in a previous save game file"""
 
@@ -240,12 +252,15 @@ class App(object):
 		pygame.quit()
 		exit(0)
 
-	def __font_render(self, string : str) -> pygame.Surface:
+	def __font_render(self, string : str, color : tuple | pygame.Color = None) -> pygame.Surface:
 		"""Font render"""
-		if self.bg.sprites()[0].type == 0:
-			return self.__font.render(string, True, local.BLACK)
+		if color == None:
+			if self.bg.sprites()[0].type == 0:
+				return self.__font.render(string, True, local.BLACK)
+			else:
+				return self.__font.render(string, True, local.WHITE)
 		else:
-			return self.__font.render(string, True, local.WHITE)
+			return self.__font.render(string, True, color)
 
 	def createMenus(self):
 		"""Create the menus"""
@@ -274,8 +289,9 @@ class App(object):
 
 		dyslexic = str(self.dyslexic).replace("True", "On").replace("False", "Off")
 		debug = str(self.debug).replace("True", "On").replace("False", "Off")
-		audio = str(self.audio).replace("True", "On").replace("False", "Off")
-		self.__options_list = ("Controls", f"Audio: {audio}", f"Dyslexia: {dyslexic}", f"Debug: {debug}", "Credits")
+		# audio = str(self.audio).replace("True", "On").replace("False", "Off")
+		self.__options_list = (f"Dyslexia: {dyslexic}", f"Debug: {debug}", "Credits")
+		# self.__options_list = ("Controls", f"Audio: {audio}", f"Dyslexia: {dyslexic}", f"Debug: {debug}", "Credits")
 
 		for button in self.__options_list:
 			self.options.add_button((self.__display.get_width()//4, self.__display.get_height()//8), button)
@@ -320,6 +336,22 @@ class App(object):
 				self.__settings[0] = False
 				pygame.key.set_repeat(App.FPS*2, App.FPS//2)
 
+	def gameOver(self):
+		"""Game Over"""
+
+		self.bg.sprites()[-1].rect.x = 0
+		while self.__inGame:
+			event = pygame.event.poll()
+			if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+				self.__inGame = False
+				self.__quit = True
+				# self.__path = [self.titleMenu]
+				return
+
+			font = self.__font_render("Game Over!", local.RED)
+			self.__display.blit(font, (self.__display.get_width()//2-font.get_width()//2, 50))
+			pygame.display.flip()
+
 	def spawnMonsters(self, amount=1, remove=False):
 		"""Spawn monsters or remove monsters"""
 
@@ -342,18 +374,19 @@ class App(object):
 				index = index[-1]
 
 			if self.__path[-1] == self.options:
-				if index == 0: #Controls
-					self.__path.append(self.controls)
-				elif index == 1: #Audio
-					self.audio = not self.audio
-				elif index == 2: #Dyslexia
+				# if index == 0: #Controls
+				# 	self.__path.append(self.controls)
+				# if index == 1: #Audio
+				# 	self.audio = not self.audio
+				if index == 0: #Dyslexia
 					self.dyslexic = not self.dyslexic
-				elif index == 3: #Debug
+				elif index == 1: #Debug
 					self.debug = not self.debug
-				elif index == 4: #Credits
+				elif index == 2: #Credits
 					self.__path.append(self.credits)
 
-				if index == 1 or index == 2 or index == 3:
+				# if index == 1 or index == 2 or index == 3:
+				if index == 0 or index == 1:
 					del self.__path[-1]
 					self.createMenus() #Recreate Menus with new font or updated stats
 
@@ -393,8 +426,8 @@ class App(object):
 				self.__path.clear()
 			elif event.key == pygame.K_d:
 				self.debug = not self.debug
-			# elif event.key == pygame.K_n:
-			# 	pygame.event.post(local.DAYNIGHTEVENT)
+			elif event.key == pygame.K_n:
+				pygame.event.post(local.DAYNIGHTEVENT)
 		elif event.key == pygame.K_LEFT:
 			if len(self.__path) > 1:
 				del self.__path[-1]
@@ -467,8 +500,14 @@ class App(object):
 				if (build := collide_with_building(i, self.__all_sprites)):
 					i.attack(build)
 
+			if collide_with_player(self.player.sprite, self.__monsters):
+				i.attack(self.player.sprite)
+
 	def update(self) -> None:
 		"""Updates positions"""
+
+		if collide_with_player(self.player.sprite, self.__monsters):
+			self.player.sprite._health -= 1
 
 		#Move monsters if not colliding_with_building and building health > 0 and build level > 1
 		for i in self.__monsters.sprites():
@@ -557,6 +596,8 @@ class App(object):
 			self.events()
 			self.update()
 			self.draw()
+			if self.isGameOver:
+				self.gameOver()
 			# print(round(self.__clock.get_fps()))
 			self.__clock.tick(self.FPS)
 

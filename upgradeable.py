@@ -22,6 +22,7 @@ class Upgradeable(sprites.Sprite):
 		return self.__level
 
 	def resetLevel(self):
+		self._heath = 0
 		self.__level = 0
 		self.upgrade(self._cost)
 
@@ -46,8 +47,8 @@ class TownHall(Upgradeable):
 
 		self.OFFSETX = offsetx
 		self._cost = 10
-		self._perUpgrade = 100
-		self._health = 100+(self._perUpgrade*(self.level-1))
+		self._perUpgrade = 50
+		self._health = 150+(self._perUpgrade*(self.level-1))
 
 
 # --- Wall Class --- #
