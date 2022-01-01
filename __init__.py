@@ -42,7 +42,7 @@ def collide_with_player(sprite, group):
 class App(object):
 
 	__app__ = "Townlands: Remastered"
-	__version__ = """IU 1.2.0 Gamma: Added copyright, removed New Game button (Dec 31 2021, 23:38 CST)"""
+	__version__ = """IU 1.2.0 Alpha: Added copyright, removed New Game button (Dec 31 2021, 23:38 CST)"""
 	#"""IU 1.1.0 Alpha: Added game over (Dec 31 2021, 23:12 CST)"""
 	# """FU 1.0.0 Alpha: Added all buildings,
 	# 								added "camera",
