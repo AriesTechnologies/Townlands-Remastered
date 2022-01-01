@@ -35,9 +35,6 @@ def collide_with_building(sprite, group):
 
 def collide_with_player(sprite, group):
 	return pygame.sprite.spritecollide(sprite, group, False)
-	# if hits:
-	# 	return True
-	# return False
 
 
 # --- App Class --- #
@@ -45,7 +42,8 @@ def collide_with_player(sprite, group):
 class App(object):
 
 	__app__ = "Townlands: Remastered"
-	__version__ = """IU 1.1.0 Alpha: Added game over (Dec 31 2021, 23:12 CST)"""
+	__version__ = """IU 1.2.0 Gamma: Added copyright, removed New Game button (Dec 31 2021, 23:38 CST)"""
+	#"""IU 1.1.0 Alpha: Added game over (Dec 31 2021, 23:12 CST)"""
 	# """FU 1.0.0 Alpha: Added all buildings,
 	# 								added "camera",
 	# 								added enemies,
@@ -152,7 +150,8 @@ class App(object):
 
 		# --- Menu Buttons --- #
 
-		self.__title_list = ("Play", "New Game", "Options", "Quit")
+		# self.__title_list = ("Play", "New Game", "Options", "Quit")
+		self.__title_list = ("Play", "Options", "Quit")
 		self.__paused_list = ("Continue", "Options", "Return to Menu")
 		self.__controls_list = ("Left: Left Arrow", "Right : Right Arrow","Run: Shift+Arrow Key","Upgrade: Down Arrow", "Pause: Escape",
 		"Back: Left Arrow (in menus)")
@@ -203,7 +202,6 @@ class App(object):
 	@property
 	def isGameOver(self):
 		return self.player.sprite._health == 0
-		#all((i._health <= 0 and i.level == 0 for i in self.fg.sprites()+self.fg2.sprites()))
 
 	def load(self) -> None:
 		"""Load in a previous save game file"""
@@ -396,12 +394,14 @@ class App(object):
 					pygame.time.set_timer(local.DAYNIGHTEVENT, local.DAYCYCLETIME, 0)
 					pygame.time.set_timer(local.ATTACKEVENT, local.ATTACKTIME, 0)
 					pygame.key.set_repeat(App.FPS*2, App.FPS//2)
-				elif index == 2: #Options
+				#elif index == 2: #Options
+				elif index == 1: #Options
 					self.__path.append(self.options)
-				elif index == 3: #Quit
+				# elif index == 3: #Quit
+				elif index == 2: #Quit
 					self.quit()
 
-				if index == 0 or index == 1:
+				if index == 0:# or index == 1:
 					self.__inGame = True
 					# pygame.time.set_timer(local.DAYNIGHTEVENT, local.DAYCYCLETIME, 0)
 					# pygame.key.set_repeat(App.FPS*2, App.FPS//2)
@@ -574,6 +574,8 @@ class App(object):
 		else:
 			font = self.__font_render(App.__app__)
 			self.__display.blit(font, (self.__display.get_width()//2-font.get_width()//2, 0))
+			font = self.__font_render("Copyright: AtlasCorporations (2022)")
+			self.__display.blit(font, (self.__display.get_width()//2-font.get_width()//2, local.DISPLAYH-font.get_height()-5))
 
 		#Draw menu
 		if len(self.__path) > 0:
